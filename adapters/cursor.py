@@ -35,12 +35,18 @@ def install(repo_root: Path) -> Path:
         hooks = {}
         data["hooks"] = hooks
 
-    # Prefer dedicated wrapper for reading stdin once
-    wrapper = wrapper_path(repo_root)
     import sys
 
     py = sys.executable or "python"
-    cmd = f'"{py}" "{wrapper.resolve()}"'
+    wrapper = wrapper_path(repo_root).resolve()
+
+    def q(value: str) -> str:
+        text = str(value)
+        if any(ch in text for ch in ' \t"&<>|^'):
+            return '"' + text.replace('"', '\\"') + '"'
+        return text
+
+    cmd = f"{q(py)} {q(wrapper)}"
 
     stop = [e for e in (hooks.get("stop") or []) if not (isinstance(e, dict) and _is_ours(e, repo_root))]
     stop.append({"command": cmd})

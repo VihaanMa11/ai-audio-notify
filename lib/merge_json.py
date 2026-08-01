@@ -43,6 +43,11 @@ def python_command(repo_root: Path, *args: str) -> str:
 
     py = sys.executable or "python"
     play = str((repo_root / "play.py").resolve())
-    # Quote paths for spaces
-    parts = [f'"{py}"', f'"{play}"', *args]
-    return " ".join(parts)
+
+    def q(value: str) -> str:
+        # Quote only when needed so Windows CreateProcess/cmd both work.
+        if any(ch in value for ch in ' \t"&<>|^'):
+            return '"' + value.replace('"', '\\"') + '"'
+        return value
+
+    return " ".join([q(py), q(play), *args])

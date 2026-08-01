@@ -1,36 +1,41 @@
-# Replacing notification sounds
+# Custom sounds
 
-Default sounds (Antoni voice cues):
+Default cues are short Antoni-style voice lines:
 
 | Event | File |
-|---|---|
+| --- | --- |
 | Task finished | `task-finished.mp3` |
 | Needs attention | `needs-attention.mp3` |
 
-## Quick replace
+## Replace in 30 seconds
 
-1. Drop your own audio files into this folder.
-2. Either:
-   - **Overwrite** `task-finished.mp3` / `needs-attention.mp3` with the same names, or
-   - Put new files here and edit `../config.json` relative paths, e.g.:
+1. Generate or download two short MP3s (see the main [README](../README.md#where-to-generate-audio)).
+2. Overwrite the two files above **with the same names**, **or** add new files and edit `../config.json`.
+3. Test:
+
+```bash
+python ../play.py finished
+python ../play.py attention
+```
+
+No reinstall required — hooks always call `play.py`, which reads `config.json`.
+
+## config.json example
 
 ```json
 {
   "sounds": {
-    "finished": "sounds/my-done.mp3",
-    "attention": "sounds/my-ping.mp3"
+    "finished": "sounds/task-finished.mp3",
+    "attention": "sounds/needs-attention.mp3"
   }
 }
 ```
 
-## Notes
+Use paths **relative to the repo root** only.
 
-- Paths in `config.json` must be **relative to the repo root** (never absolute).
-- MP3 works on macOS (`afplay`), Windows (WPF MediaPlayer), and Linux (`ffplay` / `mpg123` / `paplay`).
-- No reinstall needed after swapping files — hooks always call `play.py`, which reads `config.json`.
-- Test with:
+## Good clip checklist
 
-```bash
-python play.py finished
-python play.py attention
-```
+- Under ~3 seconds
+- Distinct “done” vs “need you” character
+- Normalized volume (Audacity → Normalize is fine)
+- MP3 preferred for cross-platform playback
