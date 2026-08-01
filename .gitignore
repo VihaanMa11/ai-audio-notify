@@ -1,0 +1,22 @@
+# Local install state (written by install.py)
+install-state.json
+
+# Local planning notes (may contain machine-specific paths)
+PLAN.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.idea/
+.vscode/
+*.swp
