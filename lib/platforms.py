@@ -53,21 +53,50 @@ def _play_linux(path: Path) -> None:
 
 
 def _play_windows(path: Path) -> None:
-    # Media.SoundPlayer is WAV-only; use WPF MediaPlayer for MP3.
+    # In-process winmm MCI starts audio almost immediately (no PowerShell cold start).
+    # Blocking until the clip ends is fine: Cursor already detaches via cursor_stop.py,
+    # and Claude Stop/Notification hooks can wait a couple seconds for the sound.
+    if not _play_windows_mci(path):
+        _play_windows_powershell(path)
+
+
+def _play_windows_mci(path: Path) -> bool:
+    """Play via winmm.dll. Blocks until playback ends. Returns False if open/play failed."""
+    import ctypes
+
+    winmm = ctypes.windll.winmm
+    alias = f"aianotify{os.getpid()}"
+    media = str(path.resolve())
+
+    def mci(cmd: str) -> int:
+        return int(winmm.mciSendStringW(cmd, None, 0, None))
+
+    mci(f"close {alias}")
+    err = mci(f'open "{media}" type mpegvideo alias {alias}')
+    if err != 0:
+        err = mci(f'open "{media}" alias {alias}')
+    if err != 0:
+        return False
+    # Start immediately; `wait` only blocks until the clip finishes (does not delay start).
+    err = mci(f"play {alias} wait")
+    mci(f"close {alias}")
+    return err == 0
+
+
+def _play_windows_powershell(path: Path) -> None:
+    # Fallback only: spawning powershell is slow (~0.5–2s).
     uri = path.as_uri()
     ps = f"""
 Add-Type -AssemblyName PresentationCore
 $p = New-Object System.Windows.Media.MediaPlayer
 $p.Open([Uri]'{uri}')
-$p.Play()
-Start-Sleep -Milliseconds 400
-$deadline = (Get-Date).AddSeconds(30)
+$deadline = (Get-Date).AddSeconds(5)
 while ($p.NaturalDuration.HasTimeSpan -eq $false -and (Get-Date) -lt $deadline) {{
-  Start-Sleep -Milliseconds 50
+  Start-Sleep -Milliseconds 20
 }}
+$p.Play()
 if ($p.NaturalDuration.HasTimeSpan) {{
-  $ms = [Math]::Max(500, [int]$p.NaturalDuration.TimeSpan.TotalMilliseconds + 300)
-  Start-Sleep -Milliseconds $ms
+  Start-Sleep -Milliseconds ([int]$p.NaturalDuration.TimeSpan.TotalMilliseconds + 200)
 }} else {{
   Start-Sleep -Seconds 3
 }}
