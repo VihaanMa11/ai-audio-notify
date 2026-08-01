@@ -6,24 +6,43 @@ agent **needs your attention**.
 Works with **Claude Code**, **Cursor**, and **Google Antigravity**. Sounds live in this repo so
 you can swap them anytime.
 
-## One-command setup
+## Install (any machine)
+
+### Windows — double-click
+
+1. Clone or download this repo.
+2. Double-click **`Install.bat`**.
+3. When prompted, press **Enter** to wire all detected tools, or type numbers / ids
+   (e.g. `1,2` or `claude,cursor`).
+4. Restart those apps so hooks reload.
+
+From CMD or PowerShell (in this folder):
+
+```bat
+Install.bat
+```
+
+### macOS / Linux
 
 ```bash
-cd ai-audio-notify
+chmod +x install.sh
+./install.sh
+```
+
+### Python directly
+
+```bash
 python install.py
 ```
 
-The installer detects which tools are on your machine, lets you pick which to wire up, and
-merges notification hooks into their configs. Missing apps get a download link (they are not
-auto-installed).
-
-Non-interactive example:
+Non-interactive:
 
 ```bash
 python install.py --tools claude,cursor,antigravity --yes
 ```
 
-Then **restart** Claude Code / Cursor / Antigravity so hooks reload.
+The installer scans for AI tools, lets you pick which to wire up, and merges notification hooks.
+Missing apps get a download link (they are not auto-installed). Requires **Python 3.9+** on PATH.
 
 ### Test sounds
 
@@ -56,6 +75,12 @@ Uninstall:
 python uninstall.py
 ```
 
+On Windows you can also run:
+
+```bat
+python uninstall.py
+```
+
 ## Requirements
 
 - Python 3.9+
@@ -65,6 +90,7 @@ python uninstall.py
 
 ```text
 ai-audio-notify/
+├── Install.bat / install.sh   # one-click / one-command launchers
 ├── install.py / uninstall.py / play.py
 ├── config.json
 ├── sounds/

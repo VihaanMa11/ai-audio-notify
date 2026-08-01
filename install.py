@@ -113,8 +113,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    print("ai-audio-notify installer")
+    print("=" * 40)
+    print("  ai-audio-notify installer")
+    print("=" * 40)
     print(f"Repo: {ROOT}")
+    print("Detecting AI tools on this machine...")
 
     tools = detect_all()
     tools_by_id = {t.id: t for t in tools}
@@ -140,10 +143,12 @@ def main() -> int:
 
     print("\nDone.")
     if installed:
-        print("Test sounds:")
+        print("\nNext steps:")
+        print("  1. Restart Claude Code / Cursor / Antigravity so hooks reload.")
+        print("  2. Run a short agent task - you should hear the finished sound.")
+        print("\nTest sounds anytime:")
         print(f'  "{sys.executable}" "{ROOT / "play.py"}" finished')
         print(f'  "{sys.executable}" "{ROOT / "play.py"}" attention')
-        print("\nRestart Claude Code / Cursor / Antigravity sessions so hooks reload.")
     return 0
 
 
