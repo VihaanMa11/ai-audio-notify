@@ -1,176 +1,180 @@
-﻿# ai-audio-notify
+<div align="center">
 
-**Hear when your AI is done — and when it needs you.**
+# 🔔 AI Audio Notify
 
-Drop-in audio cues for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Cursor](https://cursor.com), and [Google Antigravity](https://antigravity.google). One sound when a task finishes. Another when the agent is waiting for you.
+**Instant drop-in audio cues for Claude Code, Cursor, and Google Antigravity.**
 
-Clone the repo, double-click install, optionally swap in your own voice. No accounts, no paid SDKs, no npm — just Python and two small MP3s.
+*Stay in your flow state — hear when your AI agent finishes working or needs your green light.*
 
-| Cue | When it plays | Default file |
-| --- | --- | --- |
-| **Finished** | Agent turn / loop completed | `sounds/task-finished.mp3` |
-| **Attention** | Permission prompt or input needed | `sounds/needs-attention.mp3` |
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-brightgreen.svg)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
+[![Dependencies](https://img.shields.io/badge/Dependencies-Zero%20(Stdlib%20Only)-success.svg)]()
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/VihaanMa11/ai-audio-notify/pulls)
 
 ---
 
-## Quick start
+[What is this?](#-what-is-this) • [Architecture](#-how-it-works) • [Quick Start](#-quick-start) • [Supported Tools](#-supported-ai-tools) • [Custom Audio](#-custom-audio--voice-packs) • [Troubleshooting](#-troubleshooting)
 
-### 1. Get the repo
+</div>
+
+---
+
+## 📖 What is AI Audio Notify?
+
+**AI Audio Notify** is a lightweight, zero-dependency background notification tool designed for developers who use AI coding assistants like **Claude Code**, **Cursor**, and **Google Antigravity**.
+
+### ❌ The Problem
+When working with autonomous AI agents:
+- Agents take anywhere from **10 seconds to several minutes** to complete multi-file edits, run tests, or execute terminal commands.
+- Developers constantly **alt-tab** back and forth or stare at terminal outputs just to check if the AI finished.
+- When an agent gets blocked on a **permission prompt** or **user question**, it sits idle until you notice.
+
+### ✅ The Solution
+**AI Audio Notify** automatically registers native hooks with your AI tools to play distinct, non-intrusive sound cues:
+- 🟢 **Task Finished Sound**: Plays the exact instant the AI finishes its work and returns control to you.
+- 🟡 **Needs Attention Sound**: Plays when the AI requests permission, tool execution approval, or user clarification.
+
+---
+
+## ⚡ Key Highlights & Features
+
+- 🪶 **Zero Background Daemons**: Runs purely on-demand via event hooks. Uses 0% CPU and 0MB RAM while waiting.
+- 🔒 **100% Private & Offline**: Runs locally standard library Python. No internet required, no telemetry, no tracking.
+- 📦 **Zero External Dependencies**: No `pip install`, no `npm`, no heavy audio libraries. Works out of the box with OS native players (`afplay` on macOS, `PowerShell` on Windows, `ffplay`/`paplay` on Linux).
+- 🛡️ **Fail-Open Architecture**: Execution never blocks your AI agent. If audio fails for any reason, the agent continues normally.
+- ⏱️ **Smart Debouncing**: Built-in event debouncer prevents double-triggering when multiple hooks fire simultaneously.
+- 🎧 **Fully Customizable**: Swap default voice prompts with custom spoken lines (ElevenLabs, OpenAI TTS) or sound effects (pings, chimes).
+
+---
+
+## 🔄 How It Works (Architecture)
+
+```mermaid
+flowchart TD
+    subgraph AITools ["🤖 Local AI Tools"]
+        CC["Claude Code"]
+        AG["Google Antigravity"]
+        CR["Cursor"]
+    end
+
+    subgraph Hooks ["Installed Native Hooks"]
+        H_Stop["Stop / Task Completed Hook"]
+        H_Attn["Permission / Attention Hook"]
+    end
+
+    subgraph CoreEngine ["🐍 AI Audio Notify Engine"]
+        PlayPy["play.py (Debouncer & Config Reader)"]
+        Config["config.json (Relative Sound Paths)"]
+        AudioFiles["sounds/*.mp3 (Finished & Attention Cues)"]
+    end
+
+    subgraph AudioDriver ["🔊 OS Audio Engine"]
+        Win["Windows: PowerShell / MCI"]
+        Mac["macOS: afplay"]
+        Nix["Linux: paplay / ffplay / mpg123"]
+    end
+
+    CC -->|Stop Event| H_Stop
+    CC -->|Permission / Notification| H_Attn
+    AG -->|Idle Event| H_Stop
+    AG -->|ask_permission / ask_question| H_Attn
+    CR -->|stop Event| H_Stop
+
+    H_Stop -->|"python play.py finished"| PlayPy
+    H_Attn -->|"python play.py attention"| PlayPy
+
+    PlayPy --- Config
+    PlayPy --- AudioFiles
+    PlayPy --> Win & Mac & Nix
+```
+
+---
+
+## 🔊 Audio Cue Matrix
+
+| Cue | Trigger Event | Default Included Voice Sound |
+| :--- | :--- | :--- |
+| 🟢 **Finished** | Agent task / loop finished execution | [`sounds/task-finished.mp3`](sounds/task-finished.mp3) ("Task complete") |
+| 🟡 **Attention** | Agent blocked on permission / user input prompt | [`sounds/needs-attention.mp3`](sounds/needs-attention.mp3) ("Input needed") |
+
+---
+
+## 🤖 Supported AI Tools
+
+| AI Tool | Finished Cue | Attention Cue | Integration Mechanism |
+| :--- | :---: | :---: | :--- |
+| **Claude Code** | ✅ | ✅ | `Stop` & `Notification` hooks in `~/.claude/settings.json` |
+| **Google Antigravity** | ✅ | ✅ | `Stop` & `PreToolUse` hooks in `~/.gemini/config/hooks.json` |
+| **Cursor** | ✅ | ⌛ *Coming Soon* | `stop` hook in `~/.cursor/hooks.json` |
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/VihaanMa11/ai-audio-notify.git
 cd ai-audio-notify
 ```
 
-Or download the ZIP from GitHub and open the folder.
+### 2. Run the automated installer
 
-### 2. Run the installer
+The installer scans your machine, detects installed AI tools, and configures native notification hooks automatically.
 
-**Windows** — double-click `Install.bat`  
-(or in CMD / PowerShell: `Install.bat`)
+#### 🪟 Windows
+Double-click `Install.bat` or run in PowerShell / CMD:
+```powershell
+.\Install.bat
+```
 
-**macOS / Linux**
-
+#### 🍎 macOS / 🐧 Linux
 ```bash
 chmod +x install.sh
 ./install.sh
 ```
 
-**Already have Python handy**
-
+#### 🐍 Python Direct (Any OS)
 ```bash
 python install.py
 ```
 
-### 3. Pick your tools
+### 3. Select tools to enable
 
-The installer scans your machine and lists what it found (Claude Code, Cursor, Antigravity).
+When prompted, press `Enter` to auto-enable for all detected tools:
 
-| You type | Result |
-| --- | --- |
-| `Enter` | Install for every tool that was detected |
-| `all` | Install for every supported tool (even if missing — missing ones get download links) |
-| `1,2` or `claude,cursor` | Install only the ones you choose |
+```text
+==================================================
+        AI Audio Notify — Installer
+==================================================
 
-### 4. Restart & test
+Scanning local system for supported AI tools...
 
-Restart Claude Code / Cursor / Antigravity so hooks reload, then:
+  [1] Claude Code        - DETECTED
+  [2] Cursor             - DETECTED
+  [3] Antigravity        - DETECTED
+
+Select tools to install hooks into (default: ALL detected):
+[Enter] Install all detected (1, 2, 3)
+```
+
+### 4. Test sound playback
+
+Confirm audio playback works on your system:
 
 ```bash
 python play.py finished
 python play.py attention
 ```
 
-You should hear the default Antoni voice cues. Run a short agent task next — the finished sound should fire when it stops.
-
-**Requirements:** Python 3.9+ on your PATH. No pip packages.
+> **Note:** Restart your active Claude Code / Cursor / Antigravity terminal or application sessions once after installation so they load the newly registered hooks.
 
 ---
 
-## Custom audio — use your own sounds
+## ⚡ Non-Interactive / Unattended Install
 
-Everything lives in the `sounds/` folder. Hooks never hard-code absolute paths; they read relative paths from `config.json`.
-
-### Option A — overwrite (simplest)
-
-1. Create or download two short clips (ideally under ~3 seconds).
-2. Replace these files **keeping the exact names**:
-   - `sounds/task-finished.mp3` → finished cue  
-   - `sounds/needs-attention.mp3` → attention cue  
-3. Test:
-
-```bash
-python play.py finished
-python play.py attention
-```
-
-No reinstall needed.
-
-### Option B — new filenames
-
-1. Put your files in `sounds/` (e.g. `my-done.mp3`, `my-ping.mp3`).
-2. Edit `config.json`:
-
-```json
-{
-  "sounds": {
-    "finished": "sounds/my-done.mp3",
-    "attention": "sounds/my-ping.mp3"
-  },
-  "debounce_ms": 400,
-  "supported_tools": ["claude", "cursor", "antigravity"]
-}
-```
-
-Paths must stay **relative to the repo root** (never `C:\...` or `/Users/...`).
-
-### Tips for good notification audio
-
-- Keep clips **short** (0.5–2.5s) so they don’t interrupt flow.
-- Prefer **MP3**; WAV also works on most setups.
-- Make the two cues **distinct** (pitch, word, or timbre) so “done” never sounds like “help.”
-- Export at a moderate volume — OS notification levels vary.
-
-More detail: [`sounds/REPLACE.md`](sounds/REPLACE.md).
-
----
-
-## Where to generate audio
-
-You can use any voice or SFX source. These are common options that work well for this project:
-
-### AI voice (spoken cues)
-
-| Tool | Notes |
-| --- | --- |
-| [ElevenLabs](https://elevenlabs.io) | High-quality TTS. Search voices (e.g. “Antoni”) or clone your own. Generate two lines like *“Task complete”* and *“Input needed”*, download MP3. |
-| [OpenAI TTS](https://platform.openai.com/docs/guides/text-to-speech) | API / Playground voices; export and drop into `sounds/`. |
-| [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech) | Many languages and neural voices. |
-| [Microsoft Edge Read Aloud](https://www.microsoft.com/edge) + record | Free quick option: paste text, record system audio (quality varies). |
-| macOS `say` | Built-in: `say -v Samantha "Task complete" -o finished.aiff` then convert to MP3. |
-
-**Prompt ideas**
-
-- Finished: `Task complete.` / `All done.` / `Ready for the next step.`
-- Attention: `Input needed.` / `Waiting for you.` / `Approval required.`
-
-### Sound effects (beeps, chimes, UI clicks)
-
-| Source | Notes |
-| --- | --- |
-| [Freesound](https://freesound.org) | Huge CC library — filter by duration and license. |
-| [Pixabay Sound Effects](https://pixabay.com/sound-effects/) | Free SFX, simple license for personal use. |
-| [Mixkit](https://mixkit.co/free-sound-effects/) | Short UI / notification packs. |
-| Your DAW | GarageBand, Audacity, FL Studio — design a two-note motif. |
-
-### Convert / trim
-
-- [Audacity](https://www.audacityteam.org) (free) — trim silence, normalize volume, export MP3.
-- [CloudConvert](https://cloudconvert.com) — WAV/M4A → MP3 in the browser.
-
-Then overwrite `sounds/task-finished.mp3` and `sounds/needs-attention.mp3` (or point `config.json` at your new files).
-
----
-
-## What gets installed
-
-The installer only adds **hooks** into tools already on your machine. It does not download Claude, Cursor, or Antigravity.
-
-| Tool | Finished cue | Attention cue |
-| --- | --- | --- |
-| **Claude Code** | `Stop` → `~/.claude/settings.json` | `Notification` (permission / input) |
-| **Cursor** | `stop` when `status=completed` → `~/.cursor/hooks.json` | Not available yet (no idle hook in v1) |
-| **Antigravity** | `Stop` when fully idle → `~/.gemini/config/hooks.json` | `ask_permission` / `ask_question` |
-
-### Uninstall
-
-```bash
-python uninstall.py
-```
-
-Removes this project’s hook entries and leaves your other settings alone.
-
-### Non-interactive install
+For automated dev environments, container setups, or scripts:
 
 ```bash
 python install.py --tools claude,cursor,antigravity --yes
@@ -178,39 +182,110 @@ python install.py --tools claude,cursor,antigravity --yes
 
 ---
 
-## Project layout
+## 🎧 Custom Audio & Voice Packs
+
+Want to use your own voice lines or sound effects? You can swap sounds in 30 seconds without modifying code.
+
+### Method 1: Drop-in File Swap (Simplest)
+
+1. Get two short audio clips (~1–3 seconds long).
+2. Overwrite the files in the `sounds/` directory:
+   - `sounds/task-finished.mp3`
+   - `sounds/needs-attention.mp3`
+3. Test using `python play.py finished`. **No re-installation required!**
+
+### Method 2: Custom Filenames & Paths
+
+Add your custom audio files to `sounds/` and edit [`config.json`](config.json):
+
+```json
+{
+  "sounds": {
+    "finished": "sounds/my-custom-done.mp3",
+    "attention": "sounds/my-custom-alert.mp3"
+  },
+  "debounce_ms": 400,
+  "supported_tools": ["claude", "cursor", "antigravity"]
+}
+```
+
+> ⚠️ Sound paths in `config.json` must remain relative to the repository root.
+
+---
+
+## 🎙️ Where to Generate Audio & AI Voices
+
+| Source | Category | Description / Tips |
+| :--- | :--- | :--- |
+| **[ElevenLabs](https://elevenlabs.io)** | AI Voice (TTS) | High-quality realistic voice synthesis (e.g. *Antoni* or *Jarvis*). |
+| **[OpenAI TTS](https://platform.openai.com)** | AI Voice (TTS) | Expressive voice presets (Alloy, Echo, Fable, Onyx, Nova, Shimmer). |
+| **[Google Cloud TTS](https://cloud.google.com/text-to-speech)** | AI Voice (TTS) | Wide selection of Neural2 and Journey voices. |
+| **macOS `say`** | Built-in TTS | Run `say -v Samantha "Task complete" -o finished.aiff` and convert to MP3. |
+| **[Freesound](https://freesound.org)** | Sound Effects | Free CC audio library for UI chimes, bells, and notification pings. |
+| **[Pixabay SFX](https://pixabay.com/sound-effects/)** | Sound Effects | Clean, royalty-free notification sound effect packs. |
+
+### 💡 Suggested Prompts / Phrases
+- **Finished:** *"Task complete."* • *"All done!"* • *"Ready for next step."* • *[Soft Chime]*
+- **Attention:** *"Input needed."* • *"Permission required."* • *"Standing by for user."* • *[Ping Alert]*
+
+See [`sounds/REPLACE.md`](sounds/REPLACE.md) for audio editing & volume tips.
+
+---
+
+## 📁 Repository Structure
 
 ```text
 ai-audio-notify/
-├── Install.bat          # Windows: double-click to install
-├── install.sh           # macOS / Linux launcher
-├── install.py           # Detect tools → select → wire hooks
-├── uninstall.py
-├── play.py              # Plays finished / attention sounds
-├── config.json          # Relative paths to your audio
+├── Install.bat           # Windows 1-click launcher
+├── install.sh            # macOS / Linux 1-click launcher
+├── install.py            # Main detector & CLI installer
+├── uninstall.py          # Clean hook remover
+├── play.py               # Debounced playback engine
+├── config.json           # Active sound paths & debounce settings
 ├── sounds/
-│   ├── task-finished.mp3
-│   ├── needs-attention.mp3
-│   └── REPLACE.md
-├── lib/                 # Detect + playback helpers
-└── adapters/            # Claude / Cursor / Antigravity hooks
+│   ├── task-finished.mp3 # Default finished audio cue
+│   ├── needs-attention.mp3# Default attention audio cue
+│   └── REPLACE.md        # Audio replacement instructions
+├── lib/                  # Audio drivers & config mergers
+│   ├── detect.py         # AI tool presence scanner
+│   ├── merge_json.py     # Non-destructive JSON hook merger
+│   └── platforms.py      # Cross-platform OS audio player bindings
+└── adapters/             # Tool-specific adapter logic
+    ├── claude.py         # Claude Code settings hook integration
+    ├── cursor.py         # Cursor hooks configuration
+    └── antigravity.py    # Google Antigravity hook integration
 ```
 
 ---
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Install.bat` says Python not found | Install [Python 3](https://www.python.org/downloads/) and enable **Add python.exe to PATH**, then run again. |
-| No sound after an agent run | **Restart Cursor / Claude / Antigravity** so hooks reload. Run `python play.py finished` — you should hear audio. Check `%TEMP%\ai-audio-notify\last-play.log` for `ok powershell` / errors. |
-| `play.py` silent on Windows | This PC may lack the MCI MP3 driver; the app falls back to PowerShell MediaPlayer. Confirm the log shows `ok powershell`. Unmute system volume. |
-| Wrong or old sound | Confirm files under `sounds/` and paths in `config.json`. Test with `play.py`. |
-| Sound fires twice | Debounce is in `config.json` (`debounce_ms`). Raise it slightly (e.g. `800`) if needed. |
-| Tool shows “not found” | Install that app first, or skip it in the selector. The installer prints download links for missing tools. |
+| Problem | Root Cause | Resolution |
+| :--- | :--- | :--- |
+| `Python not found` on Windows | Python is missing from system PATH | Download [Python 3.9+](https://www.python.org/downloads/) and enable **"Add python.exe to PATH"**. |
+| Silent on Windows | Missing MCI audio driver | `play.py` automatically falls back to PowerShell `MediaPlayer`. Check system volume and run `python play.py finished`. |
+| No sound after agent run | Tool hooks haven't reloaded | Restart your Claude Code / Cursor / Antigravity session. Inspect `%TEMP%\ai-audio-notify\last-play.log` for logs. |
+| Sound fires twice in a row | Debounce threshold too low | Increase `"debounce_ms"` in `config.json` (e.g. from `400` to `800`). |
+| Tool shows "Not Found" | Tool is not installed on system | Install the AI tool, or skip it during interactive prompt. Download links are printed for missing tools. |
 
 ---
 
-## License
+## 🧹 Uninstallation
 
-MIT — see [LICENSE](LICENSE). Ship it, fork it, swap the voices, make it yours.
+To cleanly remove all hooks installed by this repository without disturbing your other personal tool settings:
+
+```bash
+python uninstall.py
+```
+
+---
+
+## 📜 License
+
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details. Feel free to fork, customize, swap voices, and share!
+
+<div align="center">
+
+**Enjoying AI Audio Notify? Give it a ⭐ on GitHub!**
+
+</div>
