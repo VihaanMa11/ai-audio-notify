@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from lib.platforms import play_file, should_debounce  # noqa: E402
+from lib.platforms import play_file, should_debounce, spawn_detached  # noqa: E402
 
 
 def load_config() -> dict:
@@ -63,9 +63,19 @@ def main() -> int:
         action="store_true",
         help="Skip debounce window",
     )
+    parser.add_argument(
+        "--wait",
+        action="store_true",
+        help="Play in this process and block until done (internal: used by the "
+        "detached child; hooks should not pass this)",
+    )
     args = parser.parse_args()
 
-    payload = read_stdin_json()
+    # Only the wrapper modes need the hook payload. Reading stdin when nothing
+    # consumes it risks blocking forever if the caller holds the pipe open.
+    payload = None
+    if args.require_status or args.antigravity_idle:
+        payload = read_stdin_json()
 
     # Cursor stop: only on completed
     if args.require_status:
@@ -115,7 +125,17 @@ def main() -> int:
             print(json.dumps({"decision": "allow"}))
         return 0
 
-    play_file(sound_path)
+    if args.wait:
+        play_file(sound_path)
+    else:
+        # Hand playback to a detached child so the hook returns in milliseconds
+        # instead of stalling the agent for the length of the clip.
+        py = sys.executable or "python"
+        spawned = spawn_detached(
+            [py, str(ROOT / "play.py"), args.event, "--wait", "--no-debounce"]
+        )
+        if not spawned:
+            play_file(sound_path)
 
     if args.require_status:
         print("{}")

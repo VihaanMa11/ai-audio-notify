@@ -3,6 +3,6 @@
     "finished": "sounds/task-finished.mp3",
     "attention": "sounds/needs-attention.mp3"
   },
-  "debounce_ms": 400,
+  "debounce_ms": 1500,
   "supported_tools": ["claude", "claude-desktop", "cursor", "antigravity"]
 }

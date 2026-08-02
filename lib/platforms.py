@@ -20,8 +20,38 @@ def _log(msg: str) -> None:
         pass
 
 
+def spawn_detached(cmd: list[str]) -> bool:
+    """Start a command fully detached and return immediately. Never raises.
+
+    Hooks must not block the agent. Playback takes seconds (PowerShell start-up
+    plus the clip itself), so the caller hands the work to a detached child and
+    exits right away. The child outlives the parent on both Windows and POSIX.
+    """
+    try:
+        kwargs: dict = {
+            "stdin": subprocess.DEVNULL,
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL,
+        }
+        if sys.platform == "win32":
+            flags = getattr(subprocess, "DETACHED_PROCESS", 0x00000008)
+            flags |= getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+            kwargs["creationflags"] = flags
+        else:
+            kwargs["start_new_session"] = True
+        subprocess.Popen(cmd, **kwargs)
+        return True
+    except Exception as exc:
+        _log(f"spawn_detached error: {exc!r}")
+        return False
+
+
 def play_file(path: Path) -> None:
-    """Play an audio file using the best available OS player. Never raises."""
+    """Play an audio file using the best available OS player. Never raises.
+
+    Blocks until the clip finishes; callers that must return fast should reach
+    this through a detached child (see spawn_detached).
+    """
     path = path.resolve()
     if not path.is_file():
         _log(f"missing file: {path}")
@@ -191,23 +221,44 @@ $p.Close()
         return False
 
 
+def _prune_locks(directory: Path, event: str, bucket: int) -> None:
+    """Drop claim files older than the window we still consult."""
+    try:
+        for old in directory.glob(f"{event}.*.lock"):
+            try:
+                if int(old.name.split(".")[-2]) < bucket - 1:
+                    old.unlink()
+            except (ValueError, IndexError, OSError):
+                continue
+    except Exception:
+        pass
+
+
 def should_debounce(event: str, debounce_ms: int, state_dir: Path | None = None) -> bool:
-    """Return True if this play should be skipped due to recent playback."""
+    """Return True if this play should be skipped due to recent playback.
+
+    Several hooks can fire for one logical event (a Stop and a Notification
+    landing together, or two live sessions), so the winner is decided with an
+    atomic exclusive file create rather than a read-then-write timestamp --
+    concurrent processes would otherwise all observe the same stale stamp and
+    every one of them would play.
+    """
     if debounce_ms <= 0:
         return False
     directory = state_dir or Path(os.environ.get("TEMP", "/tmp")) / "ai-audio-notify"
     try:
         directory.mkdir(parents=True, exist_ok=True)
-        stamp = directory / f"last-{event}.ts"
-        now = time.time()
-        if stamp.is_file():
-            try:
-                last = float(stamp.read_text(encoding="utf-8").strip())
-                if (now - last) * 1000 < debounce_ms:
-                    return True
-            except ValueError:
-                pass
-        stamp.write_text(str(now), encoding="utf-8")
+        bucket = int(time.time() * 1000.0 // debounce_ms)
+        current = directory / f"{event}.{bucket}.lock"
+        previous = directory / f"{event}.{bucket - 1}.lock"
+        try:
+            fd = os.open(current, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            return True  # another process already claimed this window
+        os.close(fd)
+        if previous.exists():
+            return True  # a play landed less than one full window ago
+        _prune_locks(directory, event, bucket)
     except Exception:
         return False
     return False
