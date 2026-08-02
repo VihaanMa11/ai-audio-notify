@@ -53,10 +53,12 @@ def install(repo_root: Path) -> Path:
     )
     hooks["Stop"] = stop
 
+    # No matcher: catch every notification (permission prompts, questions,
+    # and the "waiting for your input" idle notice) so the attention cue
+    # always fires. A restrictive matcher here can silently never match.
     notif = _strip_ours(list(hooks.get("Notification") or []), repo_root)
     notif.append(
         {
-            "matcher": "permission_prompt|agent_needs_input|elicitation_dialog",
             "hooks": [
                 {
                     "type": "command",

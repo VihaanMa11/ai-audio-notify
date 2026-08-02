@@ -7,8 +7,9 @@ echo  ========================================
 echo   ai-audio-notify installer
 echo  ========================================
 echo.
-echo  Scans this PC for Claude Code, Cursor,
-echo  and Antigravity, then installs sound hooks.
+echo  Scans this PC for Claude Code, the Claude
+echo  Desktop app, Cursor, and Antigravity, then
+echo  installs sound hooks.
 echo.
 
 set "PY_CMD="

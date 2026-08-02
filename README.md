@@ -2,7 +2,7 @@
 
 # 🔔 AI Audio Notify
 
-**Instant drop-in audio cues for Claude Code, Cursor, and Google Antigravity.**
+**Instant drop-in audio cues for Claude Code, the Claude Desktop app, Cursor, and Google Antigravity.**
 
 *Stay in your flow state — hear when your AI agent finishes working or needs your green light.*
 
@@ -22,7 +22,7 @@
 
 ## 📖 What is AI Audio Notify?
 
-**AI Audio Notify** is a lightweight, zero-dependency background notification tool designed for developers who use AI coding assistants like **Claude Code**, **Cursor**, and **Google Antigravity**.
+**AI Audio Notify** is a lightweight, zero-dependency background notification tool designed for developers who use AI coding assistants like **Claude Code**, the **Claude Desktop app** (Claude Code & cowork sessions), **Cursor**, and **Google Antigravity**.
 
 ### ❌ The Problem
 When working with autonomous AI agents:
@@ -53,7 +53,8 @@ When working with autonomous AI agents:
 ```mermaid
 flowchart TD
     subgraph AITools ["🤖 Local AI Tools"]
-        CC["Claude Code"]
+        CC["Claude Code (CLI / IDE)"]
+        CD["Claude Desktop app (Claude Code + cowork sessions)"]
         AG["Google Antigravity"]
         CR["Cursor"]
     end
@@ -77,6 +78,8 @@ flowchart TD
 
     CC -->|Stop Event| H_Stop
     CC -->|Permission / Notification| H_Attn
+    CD -->|Stop Event| H_Stop
+    CD -->|Permission / Notification| H_Attn
     AG -->|Idle Event| H_Stop
     AG -->|ask_permission / ask_question| H_Attn
     CR -->|stop Event| H_Stop
@@ -105,8 +108,11 @@ flowchart TD
 | AI Tool | Finished Cue | Attention Cue | Integration Mechanism |
 | :--- | :---: | :---: | :--- |
 | **Claude Code** | ✅ | ✅ | `Stop` & `Notification` hooks in `~/.claude/settings.json` |
+| **Claude Desktop app** | ✅ | ✅ | Shares the same `~/.claude/settings.json` hooks — desktop Claude Code & cowork sessions run on the Claude Code engine |
 | **Google Antigravity** | ✅ | ✅ | `Stop` & `PreToolUse` hooks in `~/.gemini/config/hooks.json` |
 | **Cursor** | ✅ | ⌛ *Coming Soon* | `stop` hook in `~/.cursor/hooks.json` |
+
+> **Claude Desktop note:** The desktop app fires these hooks for its **Claude Code and cowork sessions** — you'll hear the attention cue when a session needs permission or has been waiting for your input, and the finished cue when it hands control back. Plain claude.ai chat conversations inside the desktop app don't expose local hooks, so those can't ring (use the app's built-in notification settings for them).
 
 ---
 
@@ -177,7 +183,7 @@ python play.py attention
 For automated dev environments, container setups, or scripts:
 
 ```bash
-python install.py --tools claude,cursor,antigravity --yes
+python install.py --tools claude,claude-desktop,cursor,antigravity --yes
 ```
 
 ---
@@ -205,7 +211,7 @@ Add your custom audio files to `sounds/` and edit [`config.json`](config.json):
     "attention": "sounds/my-custom-alert.mp3"
   },
   "debounce_ms": 400,
-  "supported_tools": ["claude", "cursor", "antigravity"]
+  "supported_tools": ["claude", "claude-desktop", "cursor", "antigravity"]
 }
 ```
 
@@ -252,6 +258,7 @@ ai-audio-notify/
 │   └── platforms.py      # Cross-platform OS audio player bindings
 └── adapters/             # Tool-specific adapter logic
     ├── claude.py         # Claude Code settings hook integration
+    ├── claude_desktop.py # Claude Desktop app (shares Claude Code hooks)
     ├── cursor.py         # Cursor hooks configuration
     └── antigravity.py    # Google Antigravity hook integration
 ```

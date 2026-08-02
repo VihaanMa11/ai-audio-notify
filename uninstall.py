@@ -14,10 +14,12 @@ if str(ROOT) not in sys.path:
 
 from adapters import antigravity as ag_adapter  # noqa: E402
 from adapters import claude as claude_adapter  # noqa: E402
+from adapters import claude_desktop as claude_desktop_adapter  # noqa: E402
 from adapters import cursor as cursor_adapter  # noqa: E402
 
 ADAPTERS = {
     "claude": claude_adapter,
+    "claude-desktop": claude_desktop_adapter,
     "cursor": cursor_adapter,
     "antigravity": ag_adapter,
 }

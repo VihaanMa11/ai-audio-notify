@@ -14,11 +14,13 @@ if str(ROOT) not in sys.path:
 
 from adapters import antigravity as ag_adapter  # noqa: E402
 from adapters import claude as claude_adapter  # noqa: E402
+from adapters import claude_desktop as claude_desktop_adapter  # noqa: E402
 from adapters import cursor as cursor_adapter  # noqa: E402
 from lib.detect import detect_all  # noqa: E402
 
 ADAPTERS = {
     "claude": claude_adapter,
+    "claude-desktop": claude_desktop_adapter,
     "cursor": cursor_adapter,
     "antigravity": ag_adapter,
 }
@@ -98,12 +100,15 @@ def install_tools(selected: list[str], tools_by_id: dict) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Install AI audio notification hooks for Claude / Cursor / Antigravity"
+        description=(
+            "Install AI audio notification hooks for Claude Code, "
+            "Claude Desktop, Cursor, and Antigravity"
+        )
     )
     parser.add_argument(
         "--tools",
         default="",
-        help="Comma-separated tool ids: claude,cursor,antigravity",
+        help="Comma-separated tool ids: claude,claude-desktop,cursor,antigravity",
     )
     parser.add_argument(
         "--yes",
@@ -144,7 +149,7 @@ def main() -> int:
     print("\nDone.")
     if installed:
         print("\nNext steps:")
-        print("  1. Restart Claude Code / Cursor / Antigravity so hooks reload.")
+        print("  1. Restart Claude Code / Claude Desktop / Cursor / Antigravity so hooks reload.")
         print("  2. Run a short agent task - you should hear the finished sound.")
         print("\nTest sounds anytime:")
         print(f'  "{sys.executable}" "{ROOT / "play.py"}" finished')

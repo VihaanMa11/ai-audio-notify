@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -39,6 +40,38 @@ def detect_claude() -> ToolInfo:
         name="Claude Code",
         installed=installed,
         download_url="https://docs.anthropic.com/en/docs/claude-code",
+        detail=detail,
+    )
+
+
+def detect_claude_desktop() -> ToolInfo:
+    """Claude Desktop app (claude.ai desktop client with Claude Code / cowork)."""
+    candidates: list[Path] = []
+    detail = ""
+    if sys.platform == "win32":
+        appdata = Path(os.environ.get("APPDATA", ""))
+        local = Path(os.environ.get("LOCALAPPDATA", ""))
+        candidates = [
+            appdata / "Claude",  # app data (also covers the MS Store install)
+            local / "AnthropicClaude",
+            local / "Programs" / "Claude",
+        ]
+    elif sys.platform == "darwin":
+        candidates = [
+            Path("/Applications/Claude.app"),
+            home() / "Library" / "Application Support" / "Claude",
+        ]
+    else:
+        candidates = [home() / ".config" / "Claude"]
+
+    found = next((p for p in candidates if p.exists()), None)
+    if found:
+        detail = str(found)
+    return ToolInfo(
+        id="claude-desktop",
+        name="Claude Desktop app",
+        installed=found is not None,
+        download_url="https://claude.ai/download",
         detail=detail,
     )
 
@@ -87,6 +120,7 @@ def detect_antigravity() -> ToolInfo:
 
 DETECTORS = {
     "claude": detect_claude,
+    "claude-desktop": detect_claude_desktop,
     "cursor": detect_cursor,
     "antigravity": detect_antigravity,
 }
