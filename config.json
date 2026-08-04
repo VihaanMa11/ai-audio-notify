@@ -4,5 +4,6 @@
     "attention": "sounds/needs-attention.mp3"
   },
   "debounce_ms": 1500,
+  "cursor_permission_mode": "ask",
   "supported_tools": ["claude", "claude-desktop", "cursor", "antigravity"]
 }

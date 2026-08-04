@@ -83,6 +83,7 @@ flowchart TD
     AG -->|Idle Event| H_Stop
     AG -->|ask_permission / ask_question| H_Attn
     CR -->|stop Event| H_Stop
+    CR -->|shell / MCP approval hold| H_Attn
 
     H_Stop -->|"python play.py finished"| PlayPy
     H_Attn -->|"python play.py attention"| PlayPy
@@ -110,8 +111,9 @@ flowchart TD
 | **Claude Code** | ✅ | ✅ | `Stop` & `Notification` hooks in `~/.claude/settings.json` |
 | **Claude Desktop app** | ✅ | ✅ | Shares the same `~/.claude/settings.json` hooks — desktop Claude Code & cowork sessions run on the Claude Code engine |
 | **Google Antigravity** | ✅ | ✅ | `Stop` & `PreToolUse` hooks in `~/.gemini/config/hooks.json` |
-| **Cursor** | ✅ | ⌛ *Coming Soon* | `stop` hook in `~/.cursor/hooks.json` |
+| **Cursor** | ✅ | ✅ | `stop` (finished) + `beforeShellExecution` / `beforeMCPExecution` (attention hold) in `~/.cursor/hooks.json` |
 
+> **Cursor hold note:** When the agent is about to run a shell or MCP tool, you hear the **attention** cue and get an approval prompt (`cursor_permission_mode: "ask"` in `config.json`). Set that to `"allow"` if you only want the sound without forcing prompts.
 > **Claude Desktop note:** The desktop app fires these hooks for its **Claude Code and cowork sessions** — you'll hear the attention cue when a session needs permission or has been waiting for your input, and the finished cue when it hands control back. Plain claude.ai chat conversations inside the desktop app don't expose local hooks, so those can't ring (use the app's built-in notification settings for them).
 
 ---
